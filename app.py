@@ -85,13 +85,13 @@ def add_content():
         audio_url = get_content_audio_url(url)
 
         if not audio_url:
-            return redirect('/')
+            return redirect('/?error=Invalid URL')
 
         symbl_api = Symbl()
         response = symbl_api.convert_audio(audio_url, diarization=3)
 
         if 'message' in response:
-            return redirect('/')
+            return redirect('/?error=' + response['message'])
 
         title = ''
         slug = 'lecture'
@@ -218,7 +218,7 @@ def get_content_audio_url(url):
             file_exists = False
             while not file_exists:
                 if os.path.exists(f'./static/media/{youtube_id}.mp3'):
-                    file_exists = False
+                    file_exists = True
                     break
                 time.sleep(2)
 
