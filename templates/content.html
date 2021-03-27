@@ -1,0 +1,168 @@
+<% extends "app.html" %>
+<% block content %>
+
+<style>
+    .embed-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .embed-container iframe,
+    .embed-container object,
+    .embed-container embed {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<div style="margin-left:50px;margin-right:50px">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="sticky-top" style="padding-top:95px;margin-top:-95px">
+                <div class="embed-container player-wrapper">
+                    <div id="player"></div>
+                </div>
+            </div>
+            <% if tags: %>
+            <div style="margin-bottom:30px">
+                <h5>Explore</h5>
+                <% for tag in tags %>
+                <a href="/explore/[[tag]]" class="tag badge badge-info">[[tag]]</a>
+                <% endfor %>
+            </div>
+            <% endif %>
+            <% if related_content: %>
+            <div>
+                <h5>Related content</h5>
+                <% for item in related_content %>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <a href="/learn/[[item.slug]]/[[item._id]]">[[item.title]]
+                            </a>
+                        </h6>
+                        <p class="card-text">[[item.description]]</p>
+                    </div>
+                </div>
+                <% endfor %>
+            </div>
+            <% endif %>
+        </div>
+        <div class="col-md-7">
+            <div style="padding-left: 30px">
+                <div class="px-3 pb-md-4 mx-auto text-center">
+                    <h1>[[content.title]]</h1>
+                </div>
+                <% if conversation: %>
+                <div>
+                    <ul class="nav nav-tabs" role="tablist">
+                      <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#transcript" role="tab">Transcripts</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#questions" role="tab">Questions</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#topics" role="tab" >Topics</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#actions" role="tab" >Actions</a>
+                      </li>
+                    </ul>
+                    <div class="tab-content">
+                      <div class="tab-pane fade show active" id="transcript" role="tabpanel" >
+                        <% for message in conversation.messages %>
+                        <div>
+                            [[message.text]]
+                            <button class="seekVideo" data-timestamp="[[message.startTime]]">
+                            Scroll
+                            </button>
+                        </div>
+                        <% endfor %>
+                      </div>
+                      <div class="tab-pane fade show" id="questions" role="tabpanel">
+                        <% for item in conversation.questions %>
+                        <div>
+                            [[item.text]]
+                            <button class="seekVideo" data-timestamp="[[item.startTime]]">
+                            Scroll
+                            </button>
+                        </div>
+                        <% endfor %>
+                      </div>
+                      <div class="tab-pane fade show" id="topics" role="tabpanel">
+
+                        <div class="accordion" id="accordionTopics">
+                            <% for item in conversation.topics %>
+                              <div class="card">
+                                <div class="card-header" id="headingOne">
+                                  <h2 class="mb-0">
+                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[item.id]]">
+                                    [[item.text|title]]
+                                    </button>
+                                  </h2>
+                                </div>
+                                <div id="collapse-[[item.id]]" class="collapse">
+                                  <div class="card-body">
+                                    <% for message in item.messages %>
+                                    <div>
+                                        [[message.text]]
+                                        <button class="seekVideo" data-timestamp="[[message.startTime]]">
+                                        Scroll
+                                        </button>
+                                    </div>
+                                    <% endfor %>
+                                  </div>
+                                </div>
+                              </div>
+                            <% endfor %>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+                <% endif %>
+            </div>
+        </div>
+    </div>
+</div>
+<% endblock %>
+<% block extrascripts %>
+<script type="text/javascript">
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        videoId: 'z-EtmaFJieY',
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+    }
+
+    function onPlayerStateChange(event) {
+    }
+
+    $(function(){
+      $('.seekVideo').click(function(){
+        var startTime = parseFloat($(this).data('timestamp'))
+        player.seekTo(startTime)
+        player.playVideo()
+      })
+    });
+</script>
+<% endblock %>
