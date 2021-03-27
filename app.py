@@ -34,7 +34,7 @@ class CustomFlask(Flask):
     ))
 
 app = CustomFlask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27019/smartclass"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/smartclass"
 app.config['SECRET_KEY'] = 'SMARTCLASS_SECRETKEY'
 mongo = PyMongo(app)
 CORS(app)
