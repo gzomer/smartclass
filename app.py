@@ -212,18 +212,19 @@ def get_content_audio_url(url):
         return None
 
     youtube_id = match.group('id')
+    file_name = f'audio-{youtube_id}'
 
     def callback_media(d):
         if d['status'] == 'finished':
             file_exists = False
             while not file_exists:
-                if os.path.exists(f'./static/media/{youtube_id}.mp3'):
+                if os.path.exists(f'./static/media/{file_name}'):
                     file_exists = True
                     break
                 time.sleep(2)
 
     ydl_opts = {
-        'outtmpl':'./static/media/%(id)s.mp3',
+        'outtmpl': f'./static/media/{file_name}',
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -237,7 +238,7 @@ def get_content_audio_url(url):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    return f'{BASE_URL}/static/media/{youtube_id}.mp3'
+    return f'{BASE_URL}/static/media/{file_name}'
 
 def get_contents(search=None, ids=None, limit=50):
     query = {}
