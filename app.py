@@ -237,7 +237,7 @@ def get_content_audio_url(url):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    return f'{BASE_URL}/static/media/{youtube_id}'
+    return f'{BASE_URL}/static/media/{youtube_id}.mp3'
 
 def get_contents(search=None, ids=None, limit=50):
     query = {}
