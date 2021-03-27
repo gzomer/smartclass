@@ -1,0 +1,13 @@
+[Unit]
+Description=uWSGI instance to serve Smart Class
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/opt/smartclass
+Environment="PATH=/opt/smartclass/env/bin"
+ExecStart=/opt/smartclass/env/bin/uwsgi --ini smartclass.ini
+
+[Install]
+WantedBy=multi-user.target
