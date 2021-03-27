@@ -84,7 +84,7 @@ def add_content():
     else:
         audio_url = get_content_audio_url(url)
 
-        if audio_url:
+        if not audio_url:
             return redirect('/')
 
         symbl_api = Symbl()
