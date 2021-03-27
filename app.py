@@ -82,8 +82,10 @@ def add_content():
     if content:
         return redirect(f'/content/{content["slug"]}/{content["_id"]}')
     else:
-
         audio_url = get_content_audio_url(url)
+
+        if audio_url:
+            return redirect('/')
 
         symbl_api = Symbl()
         response = symbl_api.convert_audio(audio_url, diarization=3)
@@ -113,14 +115,6 @@ def add_content():
             )
 
         return redirect(f'/content/{slug}/{content.inserted_id}')
-
-@app.route('/job_status/<id>')
-def check_job_status(id):
-    content = mongo.db.Content.find_one({'_id': ObjectId(id)})
-
-    symbl_api = Symbl()
-    if content['job_status'] != 'completed':
-        return render_template('content.html', content=content, conversation={})
 
 
 @app.route('/content/<title>/<id>')
@@ -211,10 +205,11 @@ def home():
     return render_template('home.html', hide_search=True, contents=contents)
 
 def get_content_audio_url(url):
-
     regex = re.compile(r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?(?P<id>[A-Za-z0-9\-=_]{11})')
-
     match = regex.match(url)
+
+    if not match:
+        return None
 
     youtube_id = match.group('id')
 
@@ -222,13 +217,13 @@ def get_content_audio_url(url):
         if d['status'] == 'finished':
             file_exists = False
             while not file_exists:
-                if os.path.exists(f'./static/media/{youtube_id}'):
+                if os.path.exists(f'./static/media/{youtube_id}.mp3'):
                     file_exists = False
                     break
                 time.sleep(2)
 
     ydl_opts = {
-        'outtmpl':'./static/media/%(id)s',
+        'outtmpl':'./static/media/%(id)s.mp3',
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
