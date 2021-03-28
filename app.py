@@ -212,7 +212,7 @@ def get_content_audio_url(url):
         return None
 
     youtube_id = match.group('id')
-    file_name = f'audio-{youtube_id}'
+    file_name = f'{youtube_id}'
     full_filename = None
 
     def callback_media(d):
