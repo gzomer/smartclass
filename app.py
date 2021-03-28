@@ -237,6 +237,7 @@ def get_content_audio_url(url):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
+    base_path = f'./static/media/{file_name}'
     for extension in ['m4a', 'mp3']:
         if os.path.exists(f'{base_path}.{extension}'):
             full_filename = f'{file_name}.{extension}'
