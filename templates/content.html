@@ -28,6 +28,12 @@
                 <div class="embed-container player-wrapper">
                     <div id="player"></div>
                 </div>
+                <div class="px-3 pb-md-4 mx-auto text-center">
+                    <h1 style="font-size:20px">[[content.title]]</h1>
+                    <p>
+                        [[content.description]]
+                    </p>
+                </div>
             </div>
             <% if tags: %>
             <div style="margin-bottom:30px">
@@ -56,9 +62,12 @@
         </div>
         <div class="col-md-7">
             <div style="padding-left: 30px">
-                <div class="px-3 pb-md-4 mx-auto text-center">
-                    <h1>[[content.title]]</h1>
+                <% if not conversation: %>
+                <div class="fa-3x" style="text-align: center;padding: 70px">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <h2>Your content is being processed. Please wait.</h2>
                 </div>
+                <% endif %>
                 <% if conversation: %>
                 <div>
                     <ul class="nav nav-tabs" role="tablist">
@@ -71,37 +80,83 @@
                       <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#topics" role="tab" >Topics</a>
                       </li>
+                      <% if conversation.action_items %>
                       <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#actions" role="tab" >Actions</a>
                       </li>
+                      <% endif %>
+                      <% if conversation.follow_ups %>
+                      <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#followups" role="tab">Follow-ups</a>
+                      </li>
+                      <% endif %>
                     </ul>
                     <div class="tab-content">
                       <div class="tab-pane fade show active" id="transcript" role="tabpanel" >
-                        <% for message in conversation.messages %>
-                        <div>
-                            [[message.text]]
-                            <button class="seekVideo" data-timestamp="[[message.startTime]]">
-                            Scroll
-                            </button>
+                        <input id="search" name="search-transcripts" style="width:100%;border-radius:100px;" class="form-control mr-sm-2" type="search" placeholder="Search">
+                        <div class="mt-3">
+                        <% for group in conversation.messages %>
+                            <a class="btn btn-primary speakers <% if not loop.first %>collapsed<% endif %>" data-toggle="collapse" href="#transcript-group-[[group.key]]" role="button">
+                            [[group.name|title]]
+                            </a>
+                        <% endfor %>
                         </div>
+                        <% for group in conversation.messages %>
+                            <div class="mt-4 collapse <% if loop.first %>show<% endif %>" id="transcript-group-[[group.key]]" data-parent="#transcript">
+                                <% for message in group.data %>
+                                <div class="message-wrapper">
+                                    <div class="message message-[[message.type]]">
+                                        [[message.text|safe]]
+                                    </div>
+                                    <button class="seekVideo btn btn-primary" data-timestamp="[[message.startTime]]">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <% endfor %>
+                            </div>
                         <% endfor %>
                       </div>
                       <div class="tab-pane fade show" id="questions" role="tabpanel">
-                        <% for item in conversation.questions %>
-                        <div>
-                            [[item.text]]
-                            <button class="seekVideo" data-timestamp="[[item.startTime]]">
-                            Scroll
-                            </button>
-                        </div>
+                        <% for group in conversation.questions %>
+                            <a class="btn btn-primary speakers <% if not loop.first %>collapsed<% endif %>" data-toggle="collapse" href="#question-group-[[group.key]]" role="button">
+                            [[group.name|title]]
+                            </a>
+                        <% endfor %>
+                        <% for group in conversation.questions %>
+                            <div class="mt-4 collapse <% if loop.first %>show<% endif %>" id="question-group-[[group.key]]" data-parent="#questions">
+                            <% for item in group.data %>
+                                <blockquote class="blockquote" style="margin-bottom: 10px">
+                                    <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
+                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        Show context
+                                    </button>
+                                </blockquote>
+                                <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#question-group-[[group.key]]">
+                                  <div class="card-body" style="padding-top:5px">
+                                    <% for message in item.messages %>
+                                    <div class="message-wrapper">
+                                        <div class="message message-[[message.type]]">
+                                            [[message.text|safe]]
+                                        </div>
+                                        <button class="seekVideo btn btn-primary" data-timestamp="[[message.startTime]]">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </div>
+                                    <% endfor %>
+                                  </div>
+                                </div>
+                                <% endfor %>
+                            </div>
                         <% endfor %>
                       </div>
                       <div class="tab-pane fade show" id="topics" role="tabpanel">
-
                         <div class="accordion" id="accordionTopics">
                             <% for item in conversation.topics %>
                               <div class="card">
-                                <div class="card-header" id="headingOne">
+                                <div class="card-header">
+                                  <button class="topicButton seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
+                                    <i class="fas fa-play"></i>
+                                    </button>
                                   <h2 class="mb-0">
                                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[item.id]]">
                                     [[item.text|title]]
@@ -111,10 +166,12 @@
                                 <div id="collapse-[[item.id]]" class="collapse">
                                   <div class="card-body">
                                     <% for message in item.messages %>
-                                    <div>
-                                        [[message.text]]
-                                        <button class="seekVideo" data-timestamp="[[message.startTime]]">
-                                        Scroll
+                                    <div class="message-wrapper">
+                                        <div class="message message-[[message.type]]">
+                                            [[message.text|safe]]
+                                        </div>
+                                        <button class="seekVideo btn btn-primary" data-timestamp="[[message.startTime]]">
+                                            <i class="fas fa-play"></i>
                                         </button>
                                     </div>
                                     <% endfor %>
@@ -123,6 +180,72 @@
                               </div>
                             <% endfor %>
                         </div>
+                      </div>
+                      <div class="tab-pane fade show" id="actions" role="tabpanel">
+                        <% for group in conversation.action_items %>
+                            <a class="btn btn-primary speakers <% if not loop.first %>collapsed<% endif %>" data-toggle="collapse" href="#action-group-[[group.key]]" role="button">
+                            [[group.name|title]]
+                            </a>
+                        <% endfor %>
+                        <% for group in conversation.action_items %>
+                            <div class="mt-4 collapse <% if loop.first %>show<% endif %>" id="action-group-[[group.key]]" data-parent="#actions">
+                            <% for item in group.data %>
+                                <blockquote class="blockquote" style="margin-bottom: 10px">
+                                    <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
+                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        Show context
+                                    </button>
+                                </blockquote>
+                                <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#action-group-[[group.key]]">
+                                  <div class="card-body" style="padding-top:5px">
+                                    <% for message in item.messages %>
+                                    <div class="message-wrapper">
+                                        <div class="message message-[[message.type]]">
+                                            [[message.text|safe]]
+                                        </div>
+                                        <button class="seekVideo btn btn-primary" data-timestamp="[[message.startTime]]">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </div>
+                                    <% endfor %>
+                                  </div>
+                                </div>
+                                <% endfor %>
+                            </div>
+                        <% endfor %>
+                      </div>
+                      <div class="tab-pane fade show" id="followups" role="tabpanel">
+                        <% for group in conversation.follow_ups %>
+                            <a class="btn btn-primary speakers <% if not loop.first %>collapsed<% endif %>" data-toggle="collapse" href="#followup-group-[[group.key]]" role="button">
+                            [[group.name|title]]
+                            </a>
+                        <% endfor %>
+                        <% for group in conversation.follow_ups %>
+                            <div class="mt-4 collapse <% if loop.first %>show<% endif %>" id="followup-group-[[group.key]]" data-parent="#followups">
+                            <% for item in group.data %>
+                                <blockquote class="blockquote" style="margin-bottom: 10px">
+                                    <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
+                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        Show context
+                                    </button>
+                                </blockquote>
+                                <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#followup-group-[[group.key]]">
+                                  <div class="card-body" style="padding-top:5px">
+                                    <% for message in item.messages %>
+                                    <div class="message-wrapper">
+                                        <div class="message message-[[message.type]]">
+                                            [[message.text|safe]]
+                                        </div>
+                                        <button class="seekVideo btn btn-primary" data-timestamp="[[message.startTime]]">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </div>
+                                    <% endfor %>
+                                  </div>
+                                </div>
+                                <% endfor %>
+                            </div>
+                        <% endfor %>
                       </div>
                     </div>
                 </div>
@@ -143,18 +266,18 @@
     var player;
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
-        videoId: 'z-EtmaFJieY',
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange
-        }
+        videoId: '[[content.youtube_id]]'
       });
     }
 
-    function onPlayerReady(event) {
-    }
-
-    function onPlayerStateChange(event) {
+    function debounce(func, wait = 100) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(this, args);
+        }, wait);
+      };
     }
 
     $(function(){
@@ -163,6 +286,24 @@
         player.seekTo(startTime)
         player.playVideo()
       })
+
+      $('#search').keyup(debounce(function(e) {
+        var search = $(this).val().toLowerCase().trim()
+
+        $('#transcript .message').each(function(){
+            if ($(this).text().toLowerCase().indexOf(search) != -1) {
+                $(this).parent().show()
+            } else {
+                $(this).parent().hide()
+            }
+        })
+       }, 250))
     });
+
+    <% if not conversation: %>
+        setTimeout(function(){
+            window.location.reload()
+        }, 15000)
+    <% endif %>
 </script>
 <% endblock %>
