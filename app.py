@@ -236,7 +236,7 @@ def get_content_audio_url(url):
             'preferredquality': '192',
         }],
 
-        'progress_hooks': [callback_media],
+        #'progress_hooks': [callback_media],
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
