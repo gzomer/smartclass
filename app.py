@@ -26,7 +26,6 @@ from slugify import slugify
 from symbl import Symbl
 from rake_nltk import Rake
 from nltk.corpus import wordnet as wn
-from gensim.summarization import keywords as extract_keywords
 
 youtube_api = YoutubeAPI(api_key=os.environ["YOUTUBE_API_KEY"])
 
