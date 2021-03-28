@@ -220,11 +220,7 @@ def get_content_audio_url(url):
         if d['status'] == 'finished':
             file_exists = False
             while not file_exists:
-                for extension in ['m4a', 'mp3']:
-                    full_filename = f'{file_name}.{extension}'
-                    if os.path.exists(f'{base_path}.{extension}'):
-                        file_exists = True
-                        break
+
                 time.sleep(2)
 
     ydl_opts = {
@@ -235,13 +231,19 @@ def get_content_audio_url(url):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-
         #'progress_hooks': [callback_media],
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
+    for extension in ['m4a', 'mp3']:
+        if os.path.exists(f'{base_path}.{extension}'):
+            full_filename = f'{file_name}.{extension}'
+            break
+
+    if not full_filename:
+        return None
     return f'{BASE_URL}/static/media/{full_filename}'
 
 def get_contents(search=None, ids=None, limit=50):
