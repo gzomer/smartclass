@@ -7,6 +7,10 @@ import hashlib
 import time
 import datetime
 
+from nltk import pos_tag, word_tokenize
+import youtube_dl
+
+from pyyoutube import Api as YoutubeAPI
 from os import path
 from random import shuffle
 from collections import defaultdict
@@ -19,8 +23,16 @@ from flask_pymongo import PyMongo
 from flask_cors import CORS
 from flask import jsonify
 from slugify import slugify
-import youtube_dl
 from symbl import Symbl
+from rake_nltk import Rake
+from nltk.corpus import wordnet as wn
+from gensim.summarization import keywords as extract_keywords
+
+youtube_api = YoutubeAPI(api_key=os.environ["YOUTUBE_API_KEY"])
+
+MESSAGE_CONTEXT_BEFORE = 6
+MESSAGE_CONTEXT_AFTER = 6
+EXTRACT_KEYWORDS_COUNT = 15
 
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
@@ -77,7 +89,12 @@ def add_content():
     if not url or not is_url_valid(url):
         return redirect('/')
 
-    content = mongo.db.Content.find_one({'url': url})
+    youtube_id = get_youtube_id(url)
+
+    if not youtube_id:
+        return redirect('/') # TODO - Message
+
+    content = mongo.db.Content.find_one({'youtubeId': youtube_id})
 
     if content:
         return redirect(f'/content/{content["slug"]}/{content["_id"]}')
@@ -93,12 +110,19 @@ def add_content():
         if 'message' in response:
             return redirect('/?error=' + response['message'])
 
-        title = ''
-        slug = 'lecture'
+        youtube_id = get_youtube_id(url)
+        video = youtube_api.get_video_by_id(video_id=youtube_id)
+
+        title = video.items[0].snippet.title
+        description = video.items[0].description
+        slug = slugify(title)
 
         data = {
             'slug' : slug,
             'title': title,
+            'url': url,
+            'youtubeId': youtube_id,
+            'description': description,
             'conversationId': response['conversationId'],
             'jobId': response['jobId'],
             'jobStatus': 'in_progress'
@@ -148,7 +172,9 @@ def content(title, id):
 
     messages = symbl_api.messages(conversation_id)
     topics = symbl_api.topics(conversation_id)
-    entities = symbl_api.entities(conversation_id)
+    follow_ups = symbl_api.follow_ups(conversation_id)
+    action_items = symbl_api.action_items(conversation_id)
+
     questions = symbl_api.questions(conversation_id)
 
     def convert_message_timestamp(message):
@@ -156,8 +182,71 @@ def content(title, id):
         del message['phrases']
         return message
 
+    def get_keywords(messages):
+        rake = Rake()
+        rake.extract_keywords_from_sentences([message['text'] for message in messages])
+
+        # Only bi-grams
+        filtered = [item for item in rake.get_ranked_phrases_with_scores() if len(item[1].split()) == 2]
+
+        # Filter only nouns bi-grams
+        keywords_with_score = []
+        for item in filtered:
+            score = item[0]
+            keyword = item[1]
+            words = keyword.split()
+            should_include = True
+            tags = pos_tag(words)
+            should_include = 'NN' in tags[0][1] and 'NN' == tags[1][1]
+            for word in words:
+                synset = wn.synsets(word)
+                if not synset:
+                    should_include = False
+                    break
+                if synset[0].pos() != 'n':
+                    should_include = False
+
+            if should_include:
+                keywords_with_score.append(item)
+
+        return [item[1] for item in keywords_with_score[:EXTRACT_KEYWORDS_COUNT]]
+
+    def replace_keyword_link(text, keyword):
+        return text.replace(keyword, f'<a target="_blank" href="https://en.wikipedia.org/wiki/{keyword}">{keyword}</a>')
+
+    def enrich_messages_with_keywords(messages):
+        keywords = list(set(get_keywords(messages)))
+        for message in messages:
+            for keyword in keywords:
+                if keyword in message['text']:
+                    message['text'] = replace_keyword_link(message['text'], keyword)
+
+        return messages
+
     messages = list(map(convert_message_timestamp, messages['messages']))
+    messages = enrich_messages_with_keywords(messages)
+
     messages_map = {message['id']:message for message in messages}
+    messages_ids = [item['id'] for item in messages]
+    messages_ids_to_index = {item['id']:index for index, item in enumerate(messages)}
+
+    def map_message_type(data, message_type):
+        for item in data:
+            for message_id in item['messageIds']:
+                messages_map[message_id].update({'type': message_type})
+
+    map_message_type(questions['questions'], 'question')
+    map_message_type(action_items['actionItems'], 'action')
+    map_message_type(follow_ups['followUps'], 'followups')
+
+    unique_topics = []
+    unique_topics_map = {}
+
+    # Remove duplicated topics
+    for topic in topics['topics']:
+        if topic['text'] not in unique_topics_map:
+            unique_topics_map[topic['text']] = True
+            unique_topics.append(topic)
 
     def resolve_message_references(data):
         for item in data:
@@ -167,12 +256,42 @@ def content(title, id):
                 item['messages'] = [messages_map[message_id] for message_id in item['messageIds']]
         return data
 
+    def add_message_context(data):
+        for item in data:
+            ids = item['messageIds']
+            first_id = ids[0]
+            last_id = ids[-1]
+
+            first_index = messages_ids_to_index[first_id]
+            last_index = messages_ids_to_index[last_id]
+
+            ids = messages_ids[first_index-MESSAGE_CONTEXT_BEFORE:first_index] + ids
+            ids = ids + messages_ids[last_index+1:last_index+MESSAGE_CONTEXT_AFTER+1]
+
+            item['messageIds'] = ids
+
+        return resolve_message_references(data)
+
+    def split_by_speakers(data):
+        grouped_speakers = defaultdict(list)
+        for item in data:
+            if 'messages' in item:
+                first_message = item['messages'][0]
+            else:
+                first_message = item
+            grouped_speakers['All speakers'].append(item)
+            grouped_speakers[first_message['from']['name']].append(item)
+
+        grouped_speakers = {k : grouped_speakers[k] for k in sorted(grouped_speakers)}
+        return [{'key': slugify(name), 'name': name, 'data': group_data} for name, group_data in grouped_speakers.items()]
+
     conversation_data = {
         'topics' : [],
-        'messages': messages,
-        'questions': resolve_message_references(questions['questions']),
-        'topics': resolve_message_references(topics['topics']),
-        'entities': resolve_message_references(entities['entities'])
+        'messages': split_by_speakers(messages),
+        'questions': split_by_speakers(add_message_context(questions['questions'])),
+        'topics': resolve_message_references(unique_topics),
+        'action_items': split_by_speakers(add_message_context(action_items['actionItems'])),
+        'follow_ups': split_by_speakers(add_message_context(follow_ups['followUps'])),
     }
 
     return render_template('content.html', content=content, conversation=conversation_data)
@@ -204,24 +323,21 @@ def home():
     contents = get_contents()
     return render_template('home.html', hide_search=True, contents=contents)
 
-def get_content_audio_url(url):
+def get_youtube_id(url):
     regex = re.compile(r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?(?P<id>[A-Za-z0-9\-=_]{11})')
     match = regex.match(url)
 
-    if not match:
-        return None
+    if match:
+        return match.group('id')
 
-    youtube_id = match.group('id')
+def get_content_audio_url(url):
+    youtube_id = get_youtube_id(url)
+
+    if not youtube_id:
+        return
+
     file_name = f'{youtube_id}'
     full_filename = None
-
-    def callback_media(d):
-        base_path = f'./static/media/{file_name}'
-        if d['status'] == 'finished':
-            file_exists = False
-            while not file_exists:
-
-                time.sleep(2)
 
     ydl_opts = {
         'outtmpl': f'{os.getcwd()}/static/media/%(id)s.%(ext)s',
@@ -231,7 +347,6 @@ def get_content_audio_url(url):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-        #'progress_hooks': [callback_media],
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -245,6 +360,7 @@ def get_content_audio_url(url):
 
     if not full_filename:
         return None
+
     return f'{BASE_URL}/static/media/{full_filename}'
 
 def get_contents(search=None, ids=None, limit=50):
