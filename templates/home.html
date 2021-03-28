@@ -12,31 +12,24 @@
 			</form>
 		</div>
 	</div>
-	<div class="row mt-5">
-	    <div class="col">
-	      <div style="margin-bottom:30px">
-	        <h3>Relevant topics</h3>
-	        <% for tag in tags %>
-	        <a href="/explore/[[tag]]" class="tag badge badge-info">[[tag]]</a>
-	        <% endfor %>
-	      </div>
-	    </div>
-	</div>
 	<div class="row mt-3">
 		<div class="col">
-			<h3>Recent materials</h3>
+			<h3>Recent lectures</h3>
 		</div>
 	</div>
 	<div class="row">
 		<% for content in contents %>
 		<div class="col-4">
 	    	<div class="card mb-4">
-	          <div class="card-body">
-	            <h6 class="card-title">
-	            	<a href="/learn/[[content.slug]]/[[content._id]]">[[content.title]]</a>
-	            </h6>
-	            <p class="card-text">[[content.description]]</p>
-	          </div>
+	          <a href="/content/[[content.slug or 'lecture']]/[[content._id]]">
+                <img class="card-img-top" src="https://img.youtube.com/vi/[[content.youtubeId]]/hqdefault.jpg">
+  		          <div class="card-body">
+  		            <h6 class="card-title">
+  		            	[[content.title]]
+  		            </h6>
+  		            <p class="card-text">[[content.description]]</p>
+  		          </div>
+              </a>
 	        </div>
 	   	</div>
 	   	<% endfor %>
