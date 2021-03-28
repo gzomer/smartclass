@@ -224,7 +224,7 @@ def get_content_audio_url(url):
                 time.sleep(2)
 
     ydl_opts = {
-        'outtmpl': f'./static/media/{file_name}',
+        'outtmpl': f'./static/media/{youtube_id}',
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
