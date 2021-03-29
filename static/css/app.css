@@ -82,14 +82,22 @@
 .tab-content {
   padding-top: 10px;
 }
-.seekVideo {
+.seekVideo, .contextButton {
   min-width: 33px;
   min-height: 33px;
   width: 33px;
   height: 33px;
   padding: 1px;
   border-radius: 100px;
+}
 
+blockquote {
+  margin-bottom: 10px;
+  display:flex;
+}
+
+blockquote .contextButton, blockquote .seekVideo {
+  margin-left: 10px;
 }
 
 :focus {
@@ -116,7 +124,7 @@
 .message a {
   text-decoration: underline;
 }
-.message-followup {
+.message-followups {
   background: #02bd83;
   color: white;
   border: none;
