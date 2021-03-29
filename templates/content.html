@@ -154,9 +154,11 @@
                             <% for item in conversation.topics %>
                               <div class="card">
                                 <div class="card-header">
+                                  <% if item.messages|length > 0 %>
                                   <button class="topicButton seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
                                     <i class="fas fa-play"></i>
                                     </button>
+                                 <% endif %>
                                   <h2 class="mb-0">
                                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[item.id]]">
                                     [[item.text|title]]
