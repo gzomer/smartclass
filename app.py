@@ -279,7 +279,7 @@ def content(title, id):
             else:
                 first_message = item
             grouped_speakers['All speakers'].append(item)
-            if 'name in first_message['from']:
+            if 'name' in first_message['from']:
                 grouped_speakers[first_message['from']['name']].append(item)
 
         grouped_speakers = {k : grouped_speakers[k] for k in sorted(grouped_speakers)}
