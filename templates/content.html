@@ -125,11 +125,16 @@
                         <% for group in conversation.questions %>
                             <div class="mt-4 collapse <% if loop.first %>show<% endif %>" id="question-group-[[group.key]]" data-parent="#questions">
                             <% for item in group.data %>
-                                <blockquote class="blockquote" style="margin-bottom: 10px">
+                                <blockquote class="blockquote question-wrapper">
                                     <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
-                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
-                                        Show context
+                                    <button class="btn btn-success contextButton" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        <i class="fas fa-list"></i>
                                     </button>
+                                    <% if item.messages|length > 0 %>
+                                      <button class="seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
+                                        <i class="fas fa-play"></i>
+                                        </button>
+                                     <% endif %>
                                 </blockquote>
                                 <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#question-group-[[group.key]]">
                                   <div class="card-body" style="padding-top:5px">
@@ -194,9 +199,14 @@
                             <% for item in group.data %>
                                 <blockquote class="blockquote" style="margin-bottom: 10px">
                                     <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
-                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
-                                        Show context
+                                    <button class="btn btn-success contextButton" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        <i class="fas fa-list"></i>
                                     </button>
+                                    <% if item.messages|length > 0 %>
+                                      <button class="seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
+                                        <i class="fas fa-play"></i>
+                                        </button>
+                                     <% endif %>
                                 </blockquote>
                                 <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#action-group-[[group.key]]">
                                   <div class="card-body" style="padding-top:5px">
@@ -227,9 +237,14 @@
                             <% for item in group.data %>
                                 <blockquote class="blockquote" style="margin-bottom: 10px">
                                     <i class="fas fa-quote-left quote-icon"></i> [[item.text]]
-                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
-                                        Show context
+                                    <button class="btn btn-success contextButton" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
+                                        <i class="fas fa-list"></i>
                                     </button>
+                                    <% if item.messages|length > 0 %>
+                                      <button class="seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
+                                        <i class="fas fa-play"></i>
+                                        </button>
+                                     <% endif %>
                                 </blockquote>
                                 <div id="collapse-[[group.key]]-[[item.id]]" class="collapse" data-parent="#followup-group-[[group.key]]">
                                   <div class="card-body" style="padding-top:5px">
