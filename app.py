@@ -51,8 +51,8 @@ mongo = PyMongo(app)
 CORS(app)
 
 app.jinja_env.globals['app_name'] = 'SMART CLASS'
-app.jinja_env.globals['app_title'] = 'Smart Class - Learn faster'
-app.jinja_env.globals['app_description'] = 'Smart Class helps you learn faster.'
+app.jinja_env.globals['app_title'] = 'Smart Class - Learn faster with conversation intelligence'
+app.jinja_env.globals['app_description'] = 'Smart Class allows students to easily review lectures by transcribing the recordings, organizing the content, and adding insights in a user-friendly interface.'
 app.jinja_env.globals['current_year'] = datetime.datetime.now().year
 
 BASE_URL = 'https://smartclass.futur.technology'
