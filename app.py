@@ -18,7 +18,7 @@ from functools import partial
 from urllib.parse import urljoin, urlparse
 
 from bson.objectid import ObjectId
-from flask import Flask, render_template, request as req, redirect, session
+from flask import Flask, flash, render_template, request as req, redirect, session
 from flask_pymongo import PyMongo
 from flask_cors import CORS
 from flask import jsonify
@@ -86,31 +86,42 @@ def add_content():
 
     url = req.args.get('url')
     if not url or not is_url_valid(url):
+        flash('Invalid url.')
         return redirect('/')
 
     youtube_id = get_youtube_id(url)
 
     if not youtube_id:
-        return redirect('/') # TODO - Message
+        flash('Invalid Youtube video.')
+        return redirect('/')
 
     content = mongo.db.Content.find_one({'youtubeId': youtube_id})
 
     if content:
         return redirect(f'/content/{content["slug"]}/{content["_id"]}')
     else:
+        video = youtube_api.get_video_by_id(video_id=youtube_id)
+
+        if len(video.items) == 0:
+            flash('Invalid Youtube video.')
+            return redirect('/')
+
+        if video.items[0].contentDetails.get_video_seconds_duration() > 10*60:
+            flash('Please upgrade your account to use recordings longer than 10 minutes or use a shorter lecture.')
+            return redirect('/')
+
         audio_url = get_content_audio_url(url)
 
         if not audio_url:
-            return redirect('/?error=Invalid URL')
+            flash('Couldn\'t process Youtube video')
+            return redirect('/')
 
         symbl_api = Symbl()
         response = symbl_api.convert_audio(audio_url, diarization=3)
 
         if 'message' in response:
-            return redirect('/?error=' + response['message'])
-
-        youtube_id = get_youtube_id(url)
-        video = youtube_api.get_video_by_id(video_id=youtube_id)
+            flash(response['message'])
+            return redirect('/')
 
         title = video.items[0].snippet.title
         description = video.items[0].snippet.description
