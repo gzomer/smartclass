@@ -386,7 +386,7 @@ def get_contents(search=None, ids=None, limit=50):
             query['tags.all'] = search
 
     contents = mongo.db.Content.find(query, {'_id':1, 'title':1, 'slug':1, 'description':1, 'youtubeId': 1}).sort('created_at', -1).limit(limit)
-    contents = list(contents)
+    contents = reversed(list(contents))
 
     return contents
 
