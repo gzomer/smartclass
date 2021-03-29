@@ -113,7 +113,7 @@ def add_content():
         video = youtube_api.get_video_by_id(video_id=youtube_id)
 
         title = video.items[0].snippet.title
-        description = video.items[0].description
+        description = video.items[0].snippet.description
         slug = slugify(title)
 
         data = {
