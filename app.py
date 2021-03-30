@@ -278,6 +278,7 @@ def content(title, id):
             ids = messages_ids[first_index-MESSAGE_CONTEXT_BEFORE:first_index] + ids
             ids = ids + messages_ids[last_index+1:last_index+MESSAGE_CONTEXT_AFTER+1]
 
+            item['groupFirstMessage'] = messages_map[first_id]
             item['messageIds'] = ids
 
         return resolve_message_references(data)
