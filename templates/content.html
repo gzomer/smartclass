@@ -240,8 +240,8 @@
                                     <button class="btn btn-success contextButton" type="button" data-toggle="collapse" data-target="#collapse-[[group.key]]-[[item.id]]">
                                         <i class="fas fa-list"></i>
                                     </button>
-                                    <% if item.messages|length > 0 %>
-                                      <button class="seekVideo btn btn-primary" data-timestamp="[[item.messages[0].startTime]]">
+                                    <% if item.groupFirstMessage %>
+                                      <button class="seekVideo btn btn-primary" data-timestamp="[[item.groupFirstMessage.startTime]]">
                                         <i class="fas fa-play"></i>
                                         </button>
                                      <% endif %>
