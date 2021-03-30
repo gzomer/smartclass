@@ -192,7 +192,7 @@ def content(title, id):
         del message['phrases']
         return message
 
-    def get_keywords(messages):
+    def get_keywords(messages, topics):
         rake = Rake()
         rake.extract_keywords_from_sentences([message['text'] for message in messages])
 
@@ -219,13 +219,15 @@ def content(title, id):
             if should_include:
                 keywords_with_score.append(item)
 
-        return [item[1] for item in keywords_with_score[:EXTRACT_KEYWORDS_COUNT]]
+        extracted_keywords = [item[1] for item in keywords_with_score[:EXTRACT_KEYWORDS_COUNT]]
+        extracted_keywords.extend([topic['text'].lower() for topic in topics])
+        return list(set(extracted_keywords))
 
     def replace_keyword_link(text, keyword):
-        return text.replace(keyword, f'<a target="_blank" href="https://en.wikipedia.org/wiki/{keyword}">{keyword}</a>')
+        return text.replace(keyword, f'<a target="_blank" href="https://en.wikipedia.org/wiki/{"_".join(keyword.split())}">{keyword}</a>')
 
     def enrich_messages_with_keywords(messages):
-        keywords = list(set(get_keywords(messages)))
+        keywords = list(set(get_keywords(messages, topics['topics'])))
         for message in messages:
             for keyword in keywords:
                 if keyword in message['text']:
